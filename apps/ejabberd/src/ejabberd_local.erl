@@ -211,6 +211,16 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
+handle_call({register_route, Host}, _From, State) ->
+    Reply = ejabberd_router:register_route(Host, {apply, ?MODULE, route}),
+    ejabberd_hooks:add(local_send_to_resource_hook, Host, ?MODULE, bounce_resource_packet, 100),
+    ?INFO_MSG("register_route: ~p~n",[Host]),
+    {reply, Reply, State};
+handle_call({unregister_route, Host}, _From, State) ->
+    ejabberd_hooks:delete(local_send_to_resource_hook, Host, ?MODULE, bounce_resource_packet, 100),
+    Reply = ejabberd_router:unregister_route(Host),
+    ?INFO_MSG("unregister_route: ~p~n",[Host]),
+    {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.

@@ -32,6 +32,7 @@
          get_global_option/1, get_local_option/1]).
 -export([get_vh_by_auth_method/1]).
 -export([is_file_readable/1]).
+-export([update_vhost_from_config/0]).
 
 -include("ejabberd.hrl").
 -include("ejabberd_config.hrl").
@@ -606,3 +607,60 @@ is_file_readable(Path) ->
         {error, _Reason} ->
             false
     end.
+
+%% Load the list of hosts from config file
+get_hosts_from_config() ->
+    Config = get_ejabberd_config_path(),
+    Terms = get_plain_terms_file(Config),
+    State = lists:foldl(fun search_hosts/2, #state{}, Terms),
+    State#state.hosts.
+
+%% Update virtual hosts from config
+update_vhost_from_config() ->
+    OldHosts = get_global_option(hosts),
+    NewHosts = get_hosts_from_config(),
+    AddedHosts = NewHosts -- OldHosts,
+    RemovedHosts = OldHosts -- NewHosts,
+    ?INFO_MSG("vhost_update:~nAddedHosts: ~p~nRemovedHosts: ~p~n",[AddedHosts, RemovedHosts]),
+
+    %% stop RemovedHosts
+    lists:foreach(
+   fun(Host) ->
+       case get_local_option({modules, Host}) of
+       undefined ->
+           ok;
+       Modules ->
+           lists:foreach(
+           fun({Module, _Args}) ->
+               gen_mod:stop_module(Host, Module)
+           end, Modules)
+       end,
+       case ejabberd_rdbms:needs_odbc(Host) of
+       true  -> ejabberd_rdbms:stop_odbc(Host);
+       false -> ok
+       end,
+       gen_server:call(ejabberd_local, {unregister_route, Host})
+      end, RemovedHosts),
+
+    %% reload full config
+    ejabberd_config:start(),
+
+    %% start AddedHosts
+    lists:foreach(
+   fun(Host) ->
+       gen_server:call(ejabberd_local, {register_route, Host}),
+       case ejabberd_rdbms:needs_odbc(Host) of
+       true  -> ejabberd_rdbms:start_odbc(Host);
+       false -> ok
+       end,
+       lists:foreach(fun(M) -> M:start(Host)
+        end, ejabberd_auth:auth_modules(Host)),
+       case get_local_option({modules, Host}) of
+       undefined -> ok;
+       Modules -> 
+           lists:foreach(
+           fun({Module, Args}) -> 
+               gen_mod:start_module(Host, Module, Args)
+           end, Modules)
+       end
+      end, AddedHosts).

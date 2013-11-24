@@ -8,6 +8,10 @@ It provides support for WebSockets and reimplemented BOSH.
 
 Its home at GitHub is http://github.com/esl/MongooseIM.
 
+Changes in this fork
+--------------------
+Add the patch [found here](https://support.process-one.net/browse/EJAB-284) to allow adding and removing vhosts without restarting MongooseIM. Simply edit the `etc/ejabberd.cfg` file to add the host configuration, and execute `bin/ejabberctl vhost_update` to add or remove the vhosts.
+
 
 Quickstart guide
 ----------------

@@ -30,6 +30,7 @@
 -export([start/0, stop/0,
 	 %% Server
 	 status/0, reopen_log/0,
+	 vhost_update/0,
 	 stop_kindly/2, send_service_message_all_mucs/2,
 	 %% Erlang
 	 update_list/0, update/1,
@@ -78,6 +79,10 @@ commands() ->
      #ejabberd_commands{name = restart, tags = [server],
 			desc = "Restart ejabberd gracefully",
 			module = init, function = restart,
+			args = [], result = {res, rescode}},
+	#ejabberd_commands{name = vhost_update, tags = [server],
+			desc = "Update virtual hosts from config",
+			module = ?MODULE, function = vhost_update,
 			args = [], result = {res, rescode}},
 %     #ejabberd_commands{name = reopen_log, tags = [logs, server],
 %			desc = "Reopen the log files",
@@ -230,6 +235,10 @@ reopen_log() ->
 	_ -> false
 	end,
     ok.
+
+%% additional function
+vhost_update() ->
+    ok = ejabberd_config:update_vhost_from_config().
 
 %% Function copied from Erlang/OTP lib/sasl/src/sasl.erl which doesn't export it
 get_sasl_error_logger_type () ->

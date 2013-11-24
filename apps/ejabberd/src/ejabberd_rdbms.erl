@@ -28,6 +28,7 @@
 -author('alexey@process-one.net').
 
 -export([start/0]).
+-export([start_odbc/1, needs_odbc/1, stop_odbc/1]).
 -include("ejabberd.hrl").
 
 start() ->
@@ -76,3 +77,9 @@ needs_odbc(Host) ->
 	    false;
 	_ -> true
     end.
+
+%% Stop the ODBC module on the given host
+stop_odbc(Host) ->
+    Proc = gen_mod:get_module_proc(Host, ejabberd_odbc_sup),
+    supervisor:terminate_child(ejabberd_sup, Proc),
+    supervisor:delete_child(ejabberd_sup, Proc).
