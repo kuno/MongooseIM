@@ -198,9 +198,18 @@ init([Host, _Opts]) ->
     ejabberd_hooks:add(user_send_packet,    Host, ?MODULE, send_message,       50),
     ejabberd_hooks:add(set_presence_hook,   Host, ?MODULE, set_presence_log,   50),
     ejabberd_hooks:add(unset_presence_hook, Host, ?MODULE, unset_presence_log, 50),
-    Urls         = gen_mod:get_module_opt(global, ?MODULE, url, []),
-    AuthUser     = gen_mod:get_module_opt(global, ?MODULE, user,     undefined),
-    AuthPassword = gen_mod:get_module_opt(global, ?MODULE, password, undefined),
+    %Urls         = gen_mod:get_module_opt(global, ?MODULE, url, []),
+    Urls         = [
+      {message_hook, "http://127.0.0.1:3001/log"},
+      {online_hook, undefined},
+      {offline_hook, undefined},
+      {set_presence_hook, undefined},
+      {unset_presence_hook, undefined}
+    ],
+    AuthUser     = "1231230djdosaud0802u3j0123j1239u030812",
+    %AuthUser     = gen_mod:get_module_opt(global, ?MODULE, user,     undefined),
+    %AuthPassword = gen_mod:get_module_opt(global, ?MODULE, password, undefined),
+    AuthPassword = "123",
     {ok, #state{host = Host, urls = Urls, auth_user = AuthUser, auth_password = AuthPassword}}.
 
 %%--------------------------------------------------------------------
